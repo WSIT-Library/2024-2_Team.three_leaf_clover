@@ -1,33 +1,43 @@
-> # **2024년도 2학기 캡스톤디자인**
-> ## **2024-2_Team.three_leaf_clover**
-
-<h2> 지체장애인을 위한 행복충전소 지도 어플리케이션 : 해피드림  </h2>  
-<h3> Team 세잎클로버 (김태완, 안성모, 유동훈)  </h3>  
-
+> # **2024년도 2학기 캡스톤디자인**  
+> Team 세잎클로버 (김태완, 안성모, 유동훈)
+<br>
 <br>
 
-# 개발 환경
-
-| 구분           | 기술    | 버전  |
-|----------------|---------|-------|
-| **웹 서버**    | 기술 1  | 버전  |
-| **웹 서버**    | 기술 2  | 버전  |
-| **웹 서버**    | 기술 3  | 버전  |
-| **웹 서버**    | 기술 4  | 버전  |
-| **웹 서버**    | 기술 5  | 버전  |
-| **웹 서버**    | 기술 6  | 버전  |
-| **안드로이드 앱** | 기술 1  | 버전  |
-| **안드로이드 앱** | 기술 2  | 버전  |
-| **안드로이드 앱** | 기술 3  | 버전  |
-| **안드로이드 앱** | 기술 4  | 버전  |
+# 🌟 지체장애인을 위한 행복충전소 지도 어플리케이션 : <strong>해피드림</strong> 🌟 
 
 
 <br>
 
-# 🌏 지체장애인을 위한 행복충전소 지도 어플리케이션 : "해피드림" <br><br> 👥 TEAM 세잎 클로버 <br>
+## 개발 환경
+
+| 구분             | 기술                        | 버전       |
+|------------------|-----------------------------|------------|
+| **웹 서버**      | JDK                         | 17         |
+| **웹 서버**      | Java                        | 17.0.6     |
+| **웹 서버**      | Spring Boot                 | 3.3.4      |
+| **웹 서버**      | Spring Security             | 6.1.0      |
+| **웹 서버**      | Spring Data JPA             | 3.3.4      |
+| **웹 서버**      | Thymeleaf                  | 3.1.2      |
+| **웹 서버**      | Swagger                     | 2.6.0      |
+| **웹 서버**      | Gson                        | 2.10.1     |
+| **웹 서버**      | MySQL                       | 8.0        |
+| **웹 서버**      | Gradle                      | 7.6        |
+| **웹 서버**      | JQuery                      | 3.5.1      |
+| **웹 서버**      | Bootstrap                   | 5.3.0      |
+| **안드로이드 앱** | JDK                         | 17         |
+| **안드로이드 앱** | Android Studio              | Flamingo   |
+| **안드로이드 앱** | Retrofit                    | 2.9.0      |
+| **안드로이드 앱** | Naver Maps SDK              | 3.19.1     |
+| **안드로이드 앱** | Play Services Location      | 21.0.1     |
+| **안드로이드 앱** | Proj4j                      | 1.1.0      |
+| **안드로이드 앱** | Material Components         | 1.9.0      |
+
 <br>
 
-## 📖 목차
+## 🌏 지체장애인을 위한 행복충전소 지도 어플리케이션 : "해피드림" <br><br> 👥 TEAM 세잎 클로버 <br>
+<br>
+
+### 📖 목차
 1. [프로젝트 설명](#-프로젝트-설명)
 2. [프로젝트 목표](#-프로젝트-목표)
 3. [기대효과](#-기대효과)
@@ -36,11 +46,11 @@
 6. [프로젝트 기여자](#-프로젝트-기여자)
 
 --- 
-## 📜 프로젝트 설명
+### 📜 프로젝트 설명
 현재 대전시에는 지체장애인들을 위한 전동휠체어를 충전하는 행복충전소(전동휠체어 급속충전기)가 상용화 되고 있습니다. 사용자는 이러한 행복충전소를 기존에 제공되고 있던 행복충전소 위치 파악 어플리케이션들을 이용해 사용하고 있습니다. 하지만 해당 애플리케이션들은 행복충전소의 위치만 알려주기 때문에 현재 사용이 가능한지 알 수 없으며, 행복충전소  사용빈도, 고장여부 등을 알 수 없다는 점을 가지고 있습니다. 본 프로젝트는 기존 지도 기반의 솔루션에 충전소 사용 가능 여부, 충전소 분석(사용빈도, 전력량, 고장여부 등), 지체장애인을 위한 편의 기능 등을 추가적으로 개발하여 실시간으로 사용자에게 편의를 제공하고자 합니다. 
 <br><br>
 
-## 🥅 프로젝트 목표
+### 🥅 프로젝트 목표
 - 설치된 충전기의 효율적인 운영 및 수요 분석을 위해 충전기 사용 현황을 실시간으로 모니터링하는 서비스를 만들고자 함.
 - 기업 측 요구사항에 따라 하드웨어보다 소프트웨어 및 실제 운영 가능한 서비스에 초점을 맞춰 개발할 것임.
 - 추후 기업 측에서 하드웨어 개발/운영 가능성이 있으므로, REST API 등을 통한 확장성 있는 개발 방식을 선택해 개발할 것임.
@@ -49,7 +59,7 @@
 - 충전기의 위치를 지도상에 표시하고, 충전기의 상세 정보를 확인할 수 있는 기능을 필수적으로 구현하고자 함.
 <br><br>
 
-## 🔍 기대효과
+### 🔍 기대효과
 - 본 프로젝트의 결과물을 통해 설치된 충전기의 충전 현황을 실시간으로 관리할 수 있음.
 - 이를 통해 충전기 운영 패턴을 파악하고, 잠재 수요지를 파악하여 충전기 추가 설치 등의 연계 사업이 가능함.
 - 충전기 정보 확인 외에도 장애인 화장실, 장애인 보장구 수리점 등의 위치를 확인할 수 있도록 할 수 있고, 장애인 콜택시 등과 연계하여 택시 호출 등 장애인 편의 기능을 다양하게 탑재할 수 있을 것으로 기대됨.
@@ -86,14 +96,17 @@
 ---
 
 ## 💻 기술 스택
-- Java Spring/Spring Boot
-- MySQL JPA
-- Java (Android 앱)
-- Naver Maps API
-- Thymeleaf Bootstrap
-- Swagger
+
+- **Backend**: Java, Spring Boot, Spring Security, Spring Data JPA, Thymeleaf, Swagger
+- **Frontend**: Thymeleaf, Bootstrap, JQuery
+- **Database**: MySQL, JPA
+- **Android App**: Java (Android), Retrofit, Naver Maps SDK, Proj4j
+- **Build Tools**: Gradle
+- **Version Control**: Git, GitHub
+- **Utilities**: Gson, Logging Interceptor
   
 ---
+
 ## 👨‍💻 프로젝트 기여자
 <table>
 <thead>
@@ -105,9 +118,10 @@
 </thead>
 <tbody>
 <tr>
-<td align="center"><a href="https://github.com/dbehdgns1215"><img src="" height="150" width="150" style="max-width: 100%;"> <br> @dbehdgns1215</a></td>
-<td align="center"><a href="https://github.com/yolol312"><img src="" height="150" width="150" style="max-width: 100%;"> <br> @yolol312</a></td>
-<td align="center"><a href="https://github.com/yolol312"><img src="" height="150" width="150" style="max-width: 100%;"> <br> @Lullu</a></td>
+<td align="center"><a href="https://github.com/dbehdgns1215"><img src="https://github.com/dbehdgns1215.png" height="150" width="150" style="max-width: 100%;"> <br> @dbehdgns1215</a></td>
+<td align="center"><a href="https://github.com/yolol312"><img src="https://github.com/yolol312.png" height="150" width="150" style="max-width: 100%;"> <br> @yolol312</a></td>
+<td align="center"><a href="https://github.com/lulluralra"><img src="https://github.com/lulluralra.png" height="150" width="150" style="max-width: 100%;"> <br> @Lullu</a></td>
+
 </tr>
 </tbody>
 </table>
