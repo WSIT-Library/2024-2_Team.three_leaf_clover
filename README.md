@@ -25,6 +25,7 @@
 | **웹 서버**      | JQuery                      | 3.5.1      |
 | **웹 서버**      | Bootstrap                   | 5.3.0      |
 | **안드로이드 앱** | JDK                         | 17         |
+| **안드로이드 앱** | SDK                         | API 30     |
 | **안드로이드 앱** | Retrofit                    | 2.9.0      |
 | **안드로이드 앱** | Naver Maps SDK              | 3.19.1     |
 | **안드로이드 앱** | Play Services Location      | 21.0.1     |
