@@ -1,0 +1,469 @@
+<html layout:decorate="~{common/layout}" xmlns:th="http://www.thymeleaf.org">
+<div layout:fragment="content" class="container text-center my-3">
+<head>
+    <title>Happy Dream</title>
+    <style>
+        .dashboardTable { width: 800px; }
+
+        .ratioTd { width: 100px; }
+
+        .rowIcon {
+            width: 25px;
+            height: 25px;
+        }
+
+        .fillGreen { fill: #408558; }
+        .fillGreen-background{
+            background: #b6ffbc;
+        }
+        .fillGray-background{
+            background: #adb5bd;
+        }
+        .fillYellow-background{
+            background: #feffbe;
+        }
+        .fillRed-background{
+            background: #e5c7ca;
+        }
+        .fillBlue-background{
+            background: #bbe7ff;
+        }
+        .fill-icon{
+            align-items: center;
+            border-radius: 50%;
+            display: flex;
+            height: 40px;
+            justify-content: center;
+            width: 40px;
+        }
+        .fillGray { fill: #6c757d; }
+        .fillRed { fill: #E15241; }
+        .fillYellow { fill: #ffce00; }
+        .fillBlue { fill: #007bff;}
+        .progressGreen { background: #408558; }
+        .progressGray { background: #BDBDBD; }
+        .progressRed { background: #E15241; }
+        .progressYellow { background: #ffce00; }
+        .text-gray{
+            color: #6c757d;
+        }
+        .container {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .table-color{
+            background-color: #222e3c;
+        }
+        .table-color th {
+            color: white;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.1); /* 부드러운 강조 효과 */
+        }
+        .board-item { border: 1px solid #e9ecef; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); background: white}
+    </style>
+</head>
+
+
+    <!--    <link rel="stylesheet" th:href="@{/css/CSS_NAME.css}">-->
+    <!--    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+
+    <script>
+        const totalChargerHref = "/chargers/list";
+        const idleChargerHref = "#";
+        const usingChargerHref = "#";
+        const brokenChargerHref = "#";
+        const totalReviewHref = "/reviews";
+        const inProgressReportHref = "/reports"
+        const completedReportHref = "#";
+        const notRequestRecentlyChargerHref = "#";
+        const notUsingTodayChargerHref = "#";
+
+        window.onload = function () {
+            const reportProgressBarInProgress = document.querySelector('.reportProgressBarInProgress');
+            const reportProgressBarCompleted = document.querySelector('.reportProgressBarCompleted');
+
+            let totalReportCount = inProgressReportCount + completedReportCount;
+            reportProgressBarInProgress.style.width = Math.round((inProgressReportCount / totalReportCount) * 100) + '%';
+            reportProgressBarCompleted.style.width = (100 - reportProgressBarInProgress.style.width.replace('%', '')) + '%'; // 소수점으로 인한 프로그래스바 오류 대응
+        }
+
+    </script>
+
+    <script>
+        function navigateToLogs(row) {
+            const id = row.getAttribute("data-id");
+            window.location.href = `/chargers/${id}/logs`;
+        }
+    </script>
+
+    <!--  타임리프 인증된 사용자 접속 시 스크립트  -->
+    <script sec:authorize="isAuthenticated()"></script>
+
+    <!--  타임리프 기본 실행 스크립트  -->
+    <script th:inline="javascript">
+        const inProgressReportCount = [[${inProgressReportCount}]];
+        const completedReportCount = [[${completedReportCount}]];
+    </script>
+
+    <div class="container-fluid p-0">
+        <div class="row">
+            <div class="col-xl-6 col-xxl-5 d-flex">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <a th:href="@{/chargers}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col mt-0">
+                                                <h5 class="card-title">Total Charger</h5>
+                                            </div>
+
+                                            <div class="col-auto">
+                                                <div class="fillGreen-background fill-icon">
+                                                    <svg class="rowIcon bi flex-shrink-0 fillGreen" role="img"><use xlink:href="#lightning-charge-fill"/></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${totalChargerCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-success"
+                                                th:text="${totalChargerCount - (usingChargerCount + brokenChargerCount)}"></span>
+                                            <span class="text-muted">사용 가능 충전기</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            <a th:href="@{/chargers}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col mt-0">
+                                                <h5 class="card-title">Idle charger</h5>
+                                            </div>
+
+                                            <div class="col-auto">
+                                                <div class="fillGray-background fill-icon">
+                                                    <svg class="rowIcon bi flex-shrink-0 fillGray" role="img"><use xlink:href="#lightning-charge-fill"/></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${idleChargerCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-gray"
+                                                  th:text="${#numbers.formatDecimal(idleChargerCount * 100 / totalChargerCount,2,2) + '%'}"></span>
+                                            <span class="text-muted">유휴 충전기 비율</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a th:href="@{/chargers}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col mt-0">
+                                                <h5 class="card-title">Using Charger</h5>
+                                            </div>
+
+                                            <div class="col-auto">
+                                                <div class="fillYellow-background fill-icon">
+                                                    <svg class="rowIcon bi flex-shrink-0 fillYellow" role="img"><use xlink:href="#lightning-charge-fill"/></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${usingChargerCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-warning"
+                                                  th:text="${#numbers.formatDecimal(usingChargerCount * 100 / totalChargerCount,2,2) + '%'}"></span>
+                                            <span class="text-muted">사용 충전기 비율</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            <a th:href="@{/chargers}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col mt-0">
+                                                <h5 class="card-title">Broken Charger</h5>
+                                            </div>
+
+                                            <div class="col-auto">
+                                                <div class="fillRed-background fill-icon">
+                                                    <svg class="rowIcon bi flex-shrink-0 fillRed" role="img"><use xlink:href="#lightning-charge-fill"/></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${brokenChargerCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-danger"
+                                                  th:text="${#numbers.formatDecimal(brokenChargerCount * 100 / totalChargerCount,2,2) + '%'}"></span>
+                                            <span class="text-muted">고장 충전기 비율</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6 col-xxl-7">
+                <div class="card flex-fill w-100 board-item">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Charger List</h5>
+                    </div>
+                    <div class="card-body py-3">
+                        <div style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-hover">
+                                <thead class="table-borderless table-color">
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Address</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="charger : ${chargerList}" style="cursor: pointer;" onclick="navigateToLogs(this)" th:attr="data-id=${charger.id}">
+                                    <td th:text="${charger.id}"></td>
+                                    <td th:text="${charger.name}"></td>
+                                    <td th:text="${#strings.isEmpty(charger.addressNew) ? charger.addressOld : charger.addressNew}"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row no-gutters">
+            <div class="col-xl-6 col-xxl-7">
+                <a th:href="@{/reviews}">
+                    <div class="card flex-fill w-100 board-item">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Review Rating</h5>
+                        </div>
+                        <div class="card-body d-flex">
+                            <div class="align-self-center w-100">
+                                <table class="table mb-0">
+                                    <tbody>
+                                    <tr>
+                                        <td class="text-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                        </td>
+                                        <td class="text-end" th:text="${ratingFiveCount}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                        </td>
+                                        <td class="text-end" th:text="${ratingFourCount}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                        </td>
+                                        <td class="text-end" th:text="${ratingThreeCount}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                        </td>
+                                        <td class="text-end" th:text="${ratingTwoCount}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                        </td>
+                                        <td class="text-end" th:text="${ratingOneCount}"></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-xl-6 col-xxl-5 d-flex">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <a th:href="@{/reviews}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row mb-2" style=" justify-content: center;">
+                                            <div class="col-auto">
+                                                <div class="fillYellow-background fill-icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-star-fill fillYellow" viewBox="0 0 16 16">
+                                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${totalReviewCount}">0</h1>
+                                        <div class="mb-0">
+                                            <span class="text-muted">전체 리뷰</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            <a th:href="@{/reviews}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row mb-2" style=" justify-content: center;">
+                                            <div class="col-auto">
+                                                <div class="fillYellow-background fill-icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-stars fillYellow" viewBox="0 0 16 16">
+                                                        <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.73 1.73 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.73 1.73 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.73 1.73 0 0 0 3.407 2.31zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${averageReviewRating}">0</h1>
+                                        <div class="mb-0">
+                                            <span class="text-muted">평균 별점</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-12 col-xxl-12 d-flex">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <a th:href="@{/reports}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row mb-2" style=" justify-content: center;">
+                                            <div class="col-auto">
+                                                <div class="fillBlue-background fill-icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillBlue" viewBox="0 0 16 16">
+                                                        <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${totalReportCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-muted">신고된 충전기</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            <a th:href="@{/reports}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row mb-2" style=" justify-content: center;">
+                                            <div class="col-auto">
+                                                <div class="fillRed-background fill-icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillRed" viewBox="0 0 16 16">
+                                                        <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${totalBreakdownReportCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-muted">고장난 충전기</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a th:href="@{/reports}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row mb-2" style=" justify-content: center;">
+                                            <div class="col-auto">
+                                                <div class="fillYellow-background fill-icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillYellow" viewBox="0 0 16 16">
+                                                        <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${totalRepairRequiredCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-muted">수리 필요 충전기</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            <a th:href="@{/reports}">
+                                <div class="card board-item">
+                                    <div class="card-body">
+                                        <div class="row mb-2" style=" justify-content: center;">
+                                            <div class="col-auto">
+                                                <div class="fillGreen-background fill-icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillGreen" viewBox="0 0 16 16">
+                                                        <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h1 class="mt-1 mb-3" th:text="${totalRepairedCount}"></h1>
+                                        <div class="mb-0">
+                                            <span class="text-muted">수리 완료된 충전기</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

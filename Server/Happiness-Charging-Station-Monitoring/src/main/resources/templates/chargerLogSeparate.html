@@ -1,0 +1,161 @@
+<html layout:decorate="~{common/layout}" xmlns:th="http://www.thymeleaf.org">
+<div layout:fragment="content" class="container text-center my-3">
+    <style>
+        tr > td.state {
+            width: 1px;
+        }
+        tr > td.state.activate {
+            background-color: #64B5F6;
+        }
+        tr > td.state.deactivate {
+            background-color: #E0E0E0;
+        }
+
+        .chartBox {
+            width: 100%;
+            background: white;
+        }
+        .chartContainer {
+            overflow-x: scroll;
+        }
+        .chartContainerBody {
+            height: 450px;
+        }
+    </style>
+
+<!--    <link rel="stylesheet" th:href="@{/css/CSS_NAME.css}">-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!--  타임리프 인증된 사용자 접속 시 스크립트  -->
+    <script sec:authorize="isAuthenticated()"></script>
+
+    <!--  타임리프 기본 실행 스크립트  -->
+    <script th:inline="javascript">
+        const logList = [[${logList}]]; // 데이터 저장
+
+        // 그래프 표시 데이터
+        const logListReverse = [...logList].reverse();
+        let chartDataArray = new Array();
+
+        logListReverse.forEach((log) => {
+            let chartData = new Object();
+            chartData.x = new String(log.requestAt).replace('T', ' ').substring(2);
+            chartData.y = log.ampere;
+
+            chartDataArray.push(chartData);
+        });
+
+        let config  = {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: '충전 전력량(W)',
+                    data: chartDataArray,
+                    lineTension: 0.1,
+                    borderWidth: 3,
+                    pointBorderWidth: 3,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointHoverBackgroundColor: '#36A2EB'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: logListReverse.length / 10
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        }
+
+        window.onload = function(){
+            // Chart.js 그래프 생성
+            const ctx = document.getElementById('myChart');
+            const container = document.getElementsByClassName('chartContainer')[0];
+            const containerBody = document.getElementsByClassName('chartContainerBody')[0];
+
+            const myChart = new Chart(ctx, config); // 그래프 생성
+            const totalLableSize = myChart.data.labels.length; // 레이블 개수
+            const thresholdLableSize = 300; // 스크롤 적용할 레이블 개수 임계치
+            const widthPerPoint = 4; // 포인트 간 거리
+
+            if (totalLableSize > thresholdLableSize) {
+                containerBody.style.width = document.getElementsByClassName('container')[0].offsetWidth + (totalLableSize - thresholdLableSize) * widthPerPoint + 'px';
+            }
+            
+            myChart.update();
+        }
+    </script>
+
+    <div class="d-block mb-3 text-start">
+        <H2 class="fw-bold">충전 로그 조회</H2>
+    </div>
+
+    <!--  경고 출력  -->
+    <div class="alert alert-danger mb-2 d-flex align-items-center" th:if="${chargerState == null}">
+        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+        <div>존재하지 않는 충전기입니다.</div>
+    </div>
+    <div class="alert alert-warning mb-2 d-flex align-items-center" th:if="${chargerState != null} and ${chargerState.brokenYn == true}">
+        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+        <div th:text="|고장난 충전기입니다. 고장 전환 시각: ${#temporals.format(chargerState.brokenAt, 'yyyy-MM-dd HH:mm:ss')}|">Warning</div>
+    </div>
+
+    <div class="alert alert-secondary mb-2 d-flex align-items-center" th:if="${#lists.isEmpty(logList)==true}">
+        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#info-fill"/></svg>
+        <div>표시할 로그가 없습니다.</div>
+    </div>
+    <div class="alert alert-secondary mb-2 d-flex align-items-center" th:if="${#lists.isEmpty(logList)==false}">
+        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#info-fill"/></svg>
+        <div th:text="|등록 로그 수: ${logList.size}개|">Info</div>
+    </div>
+
+    <div class="mb-1"></div>
+
+    <div class="chartBox">
+        <div class="chartContainer">
+            <div class="chartContainerBody">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+        <tr>
+            <th></th>
+            <th>충전기 id</th>
+            <th>로그 id</th>
+            <th>등록일</th>
+            <th>등록 시각</th>
+            <th>기기 전송 시각</th>
+            <th>충전량</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="log : ${logList}">
+            <td class="state" th:classappend="${log.ampere <= 10.0 ? 'deactivate' : 'activate'}"></td>
+            <td th:text="${log.chargerId}">충전기 id</td>
+            <td th:text="${log.id}">로그 id</td>
+            <td th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd')}">등록일</td>
+            <td th:text="${#temporals.format(log.createdAt, 'HH:mm:ss')}">등록 시각</td>
+            <td th:text="${#temporals.format(log.requestAt, 'HH:mm:ss')}">기기 전송 시각</td>
+            <td th:text="${log.ampere}">충전량</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</html>

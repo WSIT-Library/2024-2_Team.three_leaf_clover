@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Join</title>
+    <!-- Jquery cdn -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 650px; /* 전체 박스의 가로 크기 키우기 */
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            margin-top: 20px; /* 회원가입 글자와의 간격 조정 */
+        }
+        h2 {
+            text-align: center; /* 가운데 정렬 */
+            font-size: 24px; /* 적당한 크기 조정 */
+            margin-bottom: 20px; /* 아래 여백 추가 */
+        }
+        input[type="text"],
+        input[type="password"],
+        select.box {
+            width: 100%; /* 가로 크기 조정 */
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            margin-bottom: 20px; /* 간격 더욱 키우기 */
+        }
+        input[type="submit"] {
+            width: 100%; /* 가로 크기 조정 */
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #222e3c;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        input[type="submit"]:hover {
+            background-color: #222e3c;
+        }
+        select.box {
+            padding: 5px 0 5px 10px;
+            height: 37px;
+        }
+        option {
+            font-size: 16px;
+        }
+        .info .box#domain-list option {
+            font-size: 14px;
+            background-color: #ffffff;
+        }
+        .flex-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px; /* 요소들 간의 세로 간격 키우기 */
+        }
+        .red-text {
+            color: red;
+        }
+        /* 페이드 인 애니메이션 */
+        #content {
+            opacity: 0;
+            transition: opacity 0.6s;
+        }
+        #content.fade-enter-active {
+            opacity: 1;
+        }
+        #content.fade-leave-active {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+<div id="content" class="container">
+    <h2 class="font-bold">회원가입</h2>
+    <form action="/signup" method="post" onsubmit="return validateForm();">
+        <div>
+            <label for="username">아이디 :</label>
+            <input type="text" id="username" name="username" onkeyup="idCheck()"> <br>
+            <span id="check-result" style="display: block; margin-top: -15px;"></span>
+            <br>
+        </div>
+        <div>
+            <label for="password">비밀번호 :</label>
+            <input type="password" id="password" name="password"> <br>
+        </div>
+        <div>
+            <label for="passwordConfirm">비밀번호 확인:</label>
+            <input type="password" id="passwordConfirm" name="passwordConfirm" onkeyup="passwordCheck()"> <br>
+            <span id="password-match-error" class="error-message" style="display: none; margin-top: -15px;">비밀번호가 일치하지 않습니다.</span>
+        </div>
+
+        <div th:if="${error}" class="red-text" style="text-align: center; margin-top: 10px;">
+            <p th:text="${error}"></p>
+        </div>
+
+        <input type="submit" class="font-bold" value="회원가입">
+    </form>
+</div>
+</body>
+
+<script>
+    // 초기 로드 시 페이드 인
+    setTimeout(() => {
+        content.classList.add('fade-enter-active');
+    }, 0);
+
+    // 페이지를 떠날 때 페이드 아웃
+    const links = document.querySelectorAll('.nav-link');
+    links.forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault(); // 기본 링크 동작 방지
+
+            content.classList.remove('fade-enter-active');
+            content.classList.add('fade-leave-active');
+
+            setTimeout(() => {
+                window.location.href = link.href; // 페이지 이동
+            }, 600); // 페이드 아웃 시간과 일치
+        });
+    });
+
+    let isIdAvailable = false;
+    let isPasswordAvailable = false;
+    const idCheck = () => {
+        const id = document.getElementById("username").value;
+        const checkResult = document.getElementById("check-result");
+
+        $.ajax({
+            type: "post",
+            url: "/api/v1/users/id-check",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            data: { "username": id },
+            success: function(res) {
+                console.log(res);
+                if (res) {
+                    checkResult.innerHTML = "이미 사용중인 아이디 입니다.";
+                    checkResult.classList.add("red-text");
+                    isIdAvailable = false;
+                } else {
+                    checkResult.innerHTML = "사용가능한 아이디 입니다.";
+                    checkResult.classList.remove("red-text");
+                    isIdAvailable = true;
+                }
+            },
+            error: function(err) {
+                console.log("아이디 중복 체크 중 에러 발생", err);
+            }
+        });
+    };
+
+    const passwordCheck = () => {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('passwordConfirm').value;
+        const passwordMatchResult = document.getElementById('password-match-error');
+
+        if (password !== confirmPassword) {
+            passwordMatchResult.style.display = "block";
+            passwordMatchResult.classList.add("red-text");
+            isPasswordAvailable = false;
+            return false;
+        } else {
+            passwordMatchResult.style.display = "none";
+            isPasswordAvailable = true;
+        }
+        return true;
+    }
+
+    const validateForm = () => {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('passwordConfirm').value;
+        const passwordMatchResult = document.getElementById('password-match-error');
+
+        // 모든 필드 입력 여부 확인
+        if (!username || !password || !confirmPassword) {
+            alert("모든 필드를 입력해주세요.");
+            return false;
+        }
+
+        return true;
+    }
+</script>
+
+</html>

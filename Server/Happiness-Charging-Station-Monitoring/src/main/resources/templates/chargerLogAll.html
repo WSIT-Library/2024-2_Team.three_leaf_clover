@@ -1,0 +1,69 @@
+<html layout:decorate="~{common/layout}" xmlns:th="http://www.thymeleaf.org">
+<div layout:fragment="content" class="container text-center my-3">
+    <style>
+        tr > td.state {
+            width: 1px;
+        }
+        tr > td.state.activate {
+            background-color: #64B5F6;
+        }
+        tr > td.state.deactivate {
+            background-color: #E0E0E0;
+        }
+    </style>
+
+<!--    <link rel="stylesheet" th:href="@{/css/CSS_NAME.css}">-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!--  타임리프 인증된 사용자 접속 시 스크립트  -->
+    <script sec:authorize="isAuthenticated()"></script>
+
+    <!--  타임리프 기본 실행 스크립트  -->
+    <script th:inline="javascript">
+        const logList = [[${logList}]]; // 데이터 저장
+    </script>
+
+    <div class="d-block mb-3 text-start">
+        <H2 class="fw-bold">전체 충전 로그 조회</H2>
+    </div>
+
+    <!--  경고 출력  -->
+    <div class="alert alert-secondary mb-2 d-flex align-items-center" th:if="${#lists.isEmpty(logList)==true}">
+        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#info-fill"/></svg>
+        <div>표시할 로그가 없습니다.</div>
+    </div>
+    <div class="alert alert-secondary mb-2 d-flex align-items-center" th:if="${#lists.isEmpty(logList)==false}">
+        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#info-fill"/></svg>
+        <div th:text="|등록 로그 수: ${logList.size}개|">Info</div>
+    </div>
+
+    <div class="mb-1"></div>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+        <tr>
+            <th></th>
+            <th>충전기 id</th>
+            <th>로그 id</th>
+            <th>등록일</th>
+            <th>등록 시각</th>
+            <th>기기 전송 시각</th>
+            <th>충전량</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="log : ${logList}">
+            <td class="state" th:classappend="${log.ampere <= 10.0 ? 'deactivate' : 'activate'}"></td>
+            <td>
+                <a class="text-primary" th:href="@{|/chargers/${log.chargerId}/logs|}" th:text="${log.chargerId}">충전기 id</a>
+            </td>
+            <td th:text="${log.id}">로그 id</td>
+            <td th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd')}">등록일</td>
+            <td th:text="${#temporals.format(log.createdAt, 'HH:mm:ss')}">등록 시각</td>
+            <td th:text="${#temporals.format(log.requestAt, 'HH:mm:ss')}">기기 전송 시각</td>
+            <td th:text="${log.ampere}">충전량</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</html>

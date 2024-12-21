@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html layout:decorate="~{common/layout}" xmlns:th="http://www.thymeleaf.org">
+<div layout:fragment="content" class="container my-3">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <title>고장 신고 관리</title>
+  <style>
+    .container { max-width: 1100px; margin: auto; padding: 20px;}
+    .report-item { border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); background: white;}
+    .report-header { display: flex; justify-content: space-between; align-items: center;}
+    .report-content { margin-top: 15px; }
+    .search-bar { margin: 20px 0; display: flex; align-items: center; gap: 10px; }
+    .button-group { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .btn-repair { color: white; background-color: #57965c; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; }
+    .btn-repair:hover { background-color: #4a7c4b; }
+    .btn-fault { color: white; background-color: rgb(201, 79, 79); border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; }
+    .btn-fault:hover { background-color: #c94f4f; }
+    .btn-complete { color: black; background-color: #777; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; }
+    .btn-complete:hover { background-color: #777; }
+    .no-reports { text-align: center; color: #999; font-size: 1.2em; margin-top: 40px; }
+    .statistics { text-align: center; margin: 20px 0; }
+    .checked-report { font-weight: bold; color: #777; }
+    .checked-report.complete { color: #57965c; }
+    .checked-report.fault { color: #F6C343; }
+    .checked-report.report { color: #c94f4f;}
+
+    .dashboardTable { width: 1100px; }
+    .ratioTd { width: 100px; }
+    .rowIcon {
+      width: 25px;
+      height: 25px;
+    }
+    .fillGreen { fill: #57965c; }
+    .fillBlue { fill: #007bff;}
+    .fillRed { fill: #c94f4f; }
+    .fillYellow { fill: #F6C343; }
+    .progressGreen { background: #57965c; }
+    .progressRed { background: #c94f4f; }
+    .progressYellow { background: #F6C343; }
+
+    .td-small {
+      width: 15%; /* 첫 번째 열 */
+    }
+    .td-medium {
+      width: 35%; /* 중간 열 */
+    }
+    .td-large {
+      width: 50%; /* 마지막 열 */
+    }
+
+    .report-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body style="background-color:#f4f6fa">
+<div class="container">
+  <div class="d-flex justify-content-center">
+    <table class="dashboardTable table table-bordered table-background">
+      <thead class="table-borderless table-primary">
+      <tr class="text-center fw-bold">
+        <td>항목</td>
+        <td>개수</td>
+        <td class="ratioTd">비율</td>
+      </tr>
+      </thead>
+      <tbody class="align-middle">
+      <tr>
+        <td class="text-start td-large">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillBlue" viewBox="0 0 16 16">
+            <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+          </svg>
+          <span class="align-middle">전체 고장 신고</span>
+        </td>
+        <td class="text-center td-small"><div th:text="${reports}"></div></td>
+        <td class="td-medium">
+          <div class="progress">
+            <div class="progress-bar w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="text-start td-large">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillRed" viewBox="0 0 16 16">
+            <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+          </svg>
+          <span class="align-middle">고장 신고 충전기</span>
+        </td>
+        <td class="text-center td-small"><div th:text="${notReportChargersCount}"></div></td>
+        <td class="td-medium">
+          <div class="progress">
+            <div class="progress-bar progressRed" th:style="'width:' + ${#numbers.formatDecimal(notReportChargersCount * 100 / reports,0,0)} + '%'" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="text-start td-large">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillYellow" viewBox="0 0 16 16">
+            <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+          </svg>
+          <span class="align-middle">수리 필요 충전기</span>
+        </td>
+        <td class="text-center td-small"><div th:text="${reportChargersCount}"></div></td>
+        <td class="td-medium">
+          <div class="progress">
+            <div class="progress-bar progressYellow" th:style="'width:' + ${#numbers.formatDecimal(reportChargersCount * 100 / reports,0,0)} + '%'" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="text-start td-large">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillGreen" viewBox="0 0 16 16">
+            <path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/>
+          </svg>
+          <span class="align-middle">수리 완료 충전기</span>
+        </td>
+        <td class="text-center td-small"><div th:text="${repairChargersCount}"></div></td>
+        <td class="td-medium">
+          <div class="progress">
+            <div class="progress-bar progressGreen" th:style="'width:' + ${#numbers.formatDecimal(repairChargersCount * 100 / reports,0,0)} + '%'" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 검색 및 필터 -->
+  <form th:action="@{/reports}" method="get" id="filter-form" class="search-bar">
+    <select id="city" name="city" class="form-control" onchange="loadDistricts(this.value)">
+      <option value="">시 선택</option>
+      <th:block th:each="city : ${cities}">
+        <option th:value="${city.key}" th:text="${city.key}"></option>
+      </th:block>
+    </select>
+    <select id="district" name="district" class="form-control" onchange="loadNeighborhoods(this.value)">
+      <option value="">구 선택</option>
+    </select>
+
+    <input id="chargerId" type="number" class="form-control" name="chargerId" placeholder="충전소 ID" min="1">
+
+    <input id="startDate" type="date" class="form-control" name="startDate">
+    <input id="endDate" type="date" class="form-control" name="endDate">
+
+    <button type="button" class="btn btn-primary" onclick="searchReports(event)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+      </svg></button>
+  </form>
+
+  <!-- 고장 신고 리스트 -->
+  <div id="reports-list"></div>
+  <p class="no-reports" id="no-reports-message" style="display:none;">등록된 고장 신고가 없습니다.</p>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<!-- Thymeleaf로 Map 데이터를 JavaScript로 전달 -->
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const cities = /*[[${cities}]]*/ {}; // 서버에서 전달된 cities 객체를 JSON 형식으로 가져오기
+  /*]]>*/
+</script>
+
+<script>
+  // 구를 동적으로 채우는 함수
+  function loadDistricts(city) {
+    const districtSelect = document.getElementById('district');
+    districtSelect.innerHTML = '<option value="">구 선택</option>';
+
+    if (city) {
+      // 선택된 시에 맞는 구 리스트를 가져옴
+      const districts = cities[city];
+
+      if (districts) {
+        districts.forEach(function (district) {
+          districtSelect.innerHTML += `<option value="${district}">${district}</option>`;
+        });
+      }
+    }
+  }
+
+  // 고장 신고 데이터를 불러오는 함수
+  function loadReports() {
+    fetch('/api/v1/reports')
+            .then(response => response.json())
+            .then(data => {
+              const reports = data.data;
+              const reportsListContainer = document.getElementById('reports-list');
+              const noReportsMessage = document.getElementById('no-reports-message');
+
+              if (reports.length === 0) {
+                noReportsMessage.style.display = 'block';
+                reportsListContainer.innerHTML = '';
+              } else {
+                noReportsMessage.style.display = 'none';
+                reportsListContainer.innerHTML = '';
+
+                reports.forEach(report => {
+                  const reportItem = document.createElement('div');
+                  reportItem.classList.add('report-item');
+
+                  const checkedReport = report.checkedReport
+                          ? (report.checkedRepair ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-hammer fillGreen" viewBox="0 0 16 16"><path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/></svg><span>수리 완료</span>' : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-hammer fillYellow" viewBox="0 0 16 16"><path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/></svg><span>수리 필요</span>')
+                          : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillRed" viewBox="0 0 16 16"><path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/></svg><span>처리 필요</span>';
+                  const checkedClass = report.checkedReport
+                          ? (report.checkedRepair ? 'complete' : 'fault')
+                          : 'report';
+
+                  reportItem.innerHTML = `
+              <div class="report-header">
+                <div class="report-info">
+                  <span class="checked-report ${checkedClass}">${checkedReport}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-zap align-middle">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  충전소 ID: ${report.chargerId}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar align-middle">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  ${report.createdAt.split('T')[0]}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock align-middle">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  ${report.createdAt.split('T')[1]}
+                </div>
+                <div class="button-group">
+                  ${report.checkedReport ?
+                          (report.checkedRepair ?
+                                  `<button class="btn-complete" onClick="completeReport(${report.id}, this)" disabled>수리 완료</button>` :
+                                  `<button class="btn-repair" onclick="completeReport(${report.id}, this)">수리 완료</button>`) :
+                          `<button class="btn-fault" onclick="faultReport(${report.id}, this)">고장 처리</button>`
+                  }
+                </div>
+              </div>
+              <div class="report-content">
+                ${report.reportContent ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text align-middle me-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><span>${report.reportContent}</span>` : ''}
+              </div>
+            `;
+                  reportsListContainer.appendChild(reportItem);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching fault reports:', error));
+  }
+
+  // 고장 처리 버튼 클릭 시
+  function faultReport(reportId, button) {
+    fetch(`/api/v1/reports/check/${reportId}`, {method: 'POST'})
+            .then(response => {
+              console.log(response.status);
+              if (response.ok) {
+                location.reload();
+              } else {
+                alert('고장 처리에 실패했습니다.');
+              }
+            })
+            .catch(error => console.error('Error completing report:', error));
+  }
+
+  // 수리 완료 버튼 클릭 시
+  function completeReport(reportId, button) {
+    fetch(`/api/v1/reports/repair/${reportId}`, {method: 'POST'})
+            .then(response => {
+              if (response.ok) {
+                location.reload();
+              } else {
+                alert('수리 완료 처리에 실패했습니다.');
+              }
+            })
+            .catch(error => console.error('Error completing repair:', error));
+  }
+
+  // 검색 및 필터링 처리 함수
+  function searchReports(event) {
+    event.preventDefault();  // 페이지 새로고침 방지
+
+    const city = document.getElementById('city').value;
+    const district = document.getElementById('district').value;
+    const chargerId = document.getElementById('chargerId').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    let url = '/api/v1/reports/search'; // 기본 URL
+
+    let queryParams = [];
+
+    if (city) {
+      queryParams.push(`city=${city}`);
+    }
+    if (district) {
+      queryParams.push(`district=${district}`);
+    }
+    if (chargerId) {
+      queryParams.push(`chargerId=${encodeURIComponent(chargerId)}`);
+    }
+    if (startDate) {
+      queryParams.push(`startDate=${encodeURIComponent(startDate)}`);
+    }
+    if (endDate) {
+      queryParams.push(`endDate=${encodeURIComponent(endDate)}`);
+    }
+
+    if (queryParams.length > 0) {
+      url += '?' + queryParams.join('&');
+    }
+    // 리뷰를 불러오는 fetch 요청
+    fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              const reports = data.data;
+              const reportsListContainer = document.getElementById('reports-list');
+              const noReportsMessage = document.getElementById('no-reports-message');
+
+              if (reports.length === 0) {
+                noReportsMessage.style.display = 'block';
+                reportsListContainer.innerHTML = '';
+              } else {
+                noReportsMessage.style.display = 'none';
+                reportsListContainer.innerHTML = '';
+
+                reports.forEach(report => {
+                  const reportItem = document.createElement('div');
+                  reportItem.classList.add('report-item');
+
+                  const checkedReport = report.checkedReport
+                          ? (report.checkedRepair ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-hammer fillGreen" viewBox="0 0 16 16"><path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/></svg><span>수리 완료</span>' : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-hammer fillYellow" viewBox="0 0 16 16"><path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/></svg><span>수리 필요</span>')
+                          : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-hammer fillRed" viewBox="0 0 16 16"><path d="M9.972 2.508a.5.5 0 0 0-.16-.556l-.178-.129a5 5 0 0 0-2.076-.783C6.215.862 4.504 1.229 2.84 3.133H1.786a.5.5 0 0 0-.354.147L.146 4.567a.5.5 0 0 0 0 .706l2.571 2.579a.5.5 0 0 0 .708 0l1.286-1.29a.5.5 0 0 0 .146-.353V5.57l8.387 8.873A.5.5 0 0 0 14 14.5l1.5-1.5a.5.5 0 0 0 .017-.689l-9.129-8.63c.747-.456 1.772-.839 3.112-.839a.5.5 0 0 0 .472-.334"/></svg><span>처리 필요</span>';
+                  const checkedClass = report.checkedReport
+                          ? (report.checkedRepair ? 'complete' : 'fault')
+                          : 'report';
+
+                  reportItem.innerHTML = `
+              <div class="report-header">
+                <div class="report-info">
+                  <span class="checked-report ${checkedClass}">${checkedReport}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-zap align-middle">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  충전소 ID: ${report.chargerId}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar align-middle">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  ${report.createdAt.split('T')[0]}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock align-middle">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  ${report.createdAt.split('T')[1]}
+                </div>
+                <div class="button-group">
+                  ${report.checkedReport ?
+                          (report.checkedRepair ?
+                                  `<button class="btn-complete" onClick="completeReport(${report.id}, this)" disabled>수리 완료</button>` :
+                                  `<button class="btn-repair" onclick="completeReport(${report.id}, this)">수리 완료</button>`) :
+                          `<button class="btn-fault" onclick="faultReport(${report.id}, this)">고장 처리</button>`
+                  }
+                </div>
+              </div>
+              <div class="report-content">
+                ${report.reportContent ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text align-middle me-1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><span>${report.reportContent}</span>` : ''}
+              </div>
+            `;
+                  reportsListContainer.appendChild(reportItem);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching fault reports:', error));
+  }
+
+  // 페이지 로드 시 고장 신고 리스트 불러오기
+  loadReports();
+</script>
+</body>
+</div>
+</html>

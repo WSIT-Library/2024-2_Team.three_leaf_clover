@@ -1,0 +1,505 @@
+<html layout:decorate="~{common/layout}" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml">
+<div layout:fragment="content" class="container text-left">
+    <meta charset="UTF-8">
+    <title>충전소 지도</title>
+    <script src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=tg2jn30hid"></script>
+    <script type="text/javascript" src="/MarkerClustering.js"></script>
+    <style>
+        .container {
+            max-width: 100%;
+            height: calc(100vh - 57px);
+            padding: 0;
+        }
+
+        .leftContainer {
+            position: absolute;
+            z-index: 1;
+            width: 320px;
+        }
+
+        .boundChargerContainer {
+            height: inherit;
+            max-height: calc(100vh - 57px - (225px + 16px) - 8px);
+        }
+
+        .chargerListBox {
+            -ms-overflow-style: none; /* for Internet Explorer, Edge */
+            scrollbar-width: none; /* for Firefox */
+            overflow-y: auto;
+        }
+
+        .chargerListBox::-webkit-scrollbar {
+            display: none; /* for Chrome, Safari, and Opera */
+        }
+
+        #map {
+            position: relative;
+            z-index: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+    </style>
+
+    <!--    <link rel="stylesheet" th:href="@{/css/CSS_NAME.css}">-->
+
+    <!--  Chart.js  -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!--  함수 정의 스크립트(최상단)  -->
+    <script>
+        function isListNotEmpty(array) {
+            // 배열이고, 길이가 0이 아닌 경우
+            return Array.isArray(array) && array.length;
+        }
+
+        // 충전기 목록 업데이트 함수(지도 IDLE 시 실행)
+        function updateBindingChargerBox(chargerIds) {
+            const container = document.querySelector(".chargerListBox");
+            const chargerCountDiv = document.querySelector("#chargerCountText");
+            const bindingChargers = getChargersByChargerIds(chargerIds); // chargerId로 charger 획득
+
+            // 충전기 목록 전체 삭제
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+
+            container.scrollTo(0, 0); // 최상단으로 이동
+
+            // 충전기 목록 추가
+            if (isListNotEmpty(bindingChargers)) {
+                bindingChargers.forEach((charger) => {
+                    // 동적 요소 추가 부분
+                    // 디자인 변경 시 수정 영역
+                    // 상위 요소(컨테이너) 생성
+                    const chargerDiv = document.createElement('div');
+                    chargerDiv.classList.add('chargerBox');
+
+                    // 하위 요소 생성
+                    const chargerName = document.createElement('div');
+                    chargerName.classList.add('chargerName', 'fw-bold', 'mb-1');
+                    chargerName.appendChild(document.createTextNode(charger.name));
+
+                    const chargerAddressDetail = document.createElement('div');
+                    chargerAddressDetail.classList.add('chargerAddressDetail');
+                    chargerAddressDetail.appendChild(document.createTextNode(charger.addressDetail));
+
+                    const divisionLine = document.createElement('hr');
+                    divisionLine.classList.add('border', 'border-1', 'border-secondary');
+
+                    // 가장 하위 요소 부터 추가
+                    chargerDiv.appendChild(chargerName);
+                    chargerDiv.appendChild(chargerAddressDetail);
+
+                    // 상위 요소(컨테이너) 추가 - 항상 마지막
+                    container.appendChild(chargerDiv);
+                    container.appendChild(divisionLine);
+                });
+            }
+
+            // 충전기 개수 표시 텍스트 삭제
+            while (chargerCountDiv.firstChild) {
+                chargerCountDiv.removeChild(chargerCountDiv.firstChild);
+            }
+
+            // 충전기 개수 갱신
+            const newSpan = document.createElement('span');
+            let countString = "주변 충전기 수: " + chargerIds.length + "개";
+            newSpan.appendChild(document.createTextNode(countString));
+            chargerCountDiv.appendChild(newSpan);
+        }
+    </script>
+
+    <!--  이벤트 정의 스크립트(지도 제외)  -->
+    <script>
+        // 검색 버튼 이벤트
+        const searchButtonClicked = (event) => {
+            let button = event.target;
+            let addressInput = document.querySelector('#formAddress');
+            let latitudeInput = document.querySelector('#formLatitude');
+            let longitudeInput = document.querySelector('#formLongitude');
+            let url;
+
+            // 버튼 클릭 시 div 태그가 입력되는 현상 대응
+            if (button.matches('button') === false) {
+                console.log("버튼이 아닌 요소가 입력됨", button);
+                button = button.closest('button');
+            }
+
+            if (button.value === "address") {
+                if (addressInput.value) {
+                    url = `/chargers?address=${encodeURIComponent(addressInput.value)}`;
+                }
+                else {
+                    alert("주소를 입력하세요.");
+                    return;
+                }
+            }
+            else if (button.value === "location") {
+                if (latitudeInput.value && longitudeInput.value) {
+                    url = `/chargers?latitude=${encodeURIComponent(latitudeInput.value)}&longitude=${encodeURIComponent(longitudeInput.value)}`;
+                }
+                else {
+                    alert("위도와 경도를 입력하세요.");
+                    return;
+                }
+            }
+
+            // 검색중 표시
+            button.querySelector('div').classList.add('visually-hidden');
+            button.querySelector('span.spinner-border').classList.remove('visually-hidden');
+            button.querySelector('span.spinner-text').classList.remove('visually-hidden');
+
+            window.location.href = url; // 해당 URL로 리디렉션
+        }
+
+        // 검색창 닫기/열기 이벤트
+        const searchBoxCollapseEvent = (event) => {
+            let searchContainer = document.querySelector('.searchContainer');
+            let collapseIcon = document.querySelector('#btn-collapse-icon');
+            let expandIcon = document.querySelector('#btn-expand-icon');
+            let button = expandIcon.closest('button');
+            // console.log(event.type); // type으로 이벤트 구분 가능
+
+            collapseIcon.classList.toggle('visually-hidden');
+            expandIcon.classList.toggle('visually-hidden');
+            button.classList.toggle('mb-3');
+            searchContainer.classList.toggle('opacity-75')
+        }
+
+        // 충전기 목록 닫기/열기 이벤트
+        const chargerListBoxCollapseEvent = (event) => {
+            let chargerListContainer = document.querySelector('.boundChargerContainer');
+            let collapseIcon = document.querySelector('#charger-btn-collapse-icon');
+            let expandIcon = document.querySelector('#charger-btn-expand-icon');
+            let alertBox = chargerListContainer.querySelector('.alert')
+            // console.log(event.type); // type으로 이벤트 구분 가능
+
+            collapseIcon.classList.toggle('visually-hidden');
+            expandIcon.classList.toggle('visually-hidden');
+            alertBox.classList.toggle('mb-2');
+            alertBox.classList.toggle('mb-0');
+            //chargerListContainer.classList.toggle('opacity-75')
+        }
+
+        // 로딩 시 검색창 초기화
+        const initSearchBoxFromUrl = () => {
+            let addressInput = document.querySelector('#formAddress');
+            let latitudeInput = document.querySelector('#formLatitude');
+            let longitudeInput = document.querySelector('#formLongitude');
+            let query = window.location.search;
+            let param = new URLSearchParams(query);
+
+            addressInput.value = "";
+            latitudeInput.value = "";
+            longitudeInput.value = "";
+
+            if (param.has('address')) {
+                addressInput.value = param.get('address');
+            }
+            else if (param.has('latitude') && param.has('longitude')) {
+                latitudeInput.value = param.get('latitude');
+                longitudeInput.value = param.get('longitude');
+            }
+        }
+
+        window.onload = function() {
+            const searchButtons = document.querySelectorAll('.btn-search');
+            const searchContainer = document.querySelector('#searchCollapse');
+            const chargerListBox = document.querySelector('#chargerListCollapse');
+
+            // 초기화
+            initSearchBoxFromUrl();
+
+            // 이벤트 추가
+            // 검색 버튼 이벤트 추가
+            searchButtons.forEach((button) => {
+                button.addEventListener('click', searchButtonClicked);
+            });
+
+            // 검색창 닫기/열기 이벤트 추가
+            searchContainer.addEventListener('show.bs.collapse', searchBoxCollapseEvent);
+            searchContainer.addEventListener('hide.bs.collapse', searchBoxCollapseEvent);
+            // 충전기 목록 닫기/열기 이벤트 추가
+            chargerListBox.addEventListener('show.bs.collapse', chargerListBoxCollapseEvent);
+            chargerListBox.addEventListener('hide.bs.collapse', chargerListBoxCollapseEvent);
+        }
+    </script>
+
+    <!--  타임리프 인증된 사용자 접속 시 스크립트  -->
+    <script sec:authorize="isAuthenticated()"></script>
+
+    <!--  타임리프 기본 실행 스크립트(데이터 관련 작업만 수행)  -->
+    <script th:inline="javascript">
+        // TODO - DTO 변경시 반드시 수정!!!
+        const chargerObjects = [[${chargers}]]; // 타임리프로 받아온 데이터 저장
+        let chargerArray = []; // Object가 아닌 Array로 변환된 충전기 리스트
+        let chargerIdArray = []; // chargerId 검색을 위한 인덱스
+
+        // console.log(chargerObjects);
+        if (Object.keys(chargerObjects).length) {
+            // 충전기 Array 생성
+            chargerObjects.forEach((charger) => {
+                chargerArray.push(charger);
+            })
+
+            // 인덱스 생성
+            if (isListNotEmpty(chargerArray)) {
+                chargerArray.forEach((charger) => {
+                    chargerIdArray.push(charger.id);
+                });
+            }
+        }
+
+        // 문제 발생 시 테스트 코드
+        // console.log(Array.isArray(chargerArray));
+        // console.log(chargerArray.length);
+        // console.log(Array.isArray(chargerIdArray));
+        // console.log(chargerIdArray.length);
+
+        // 충전기 리스트 Getter
+        function getChargers() {
+            return chargerArray;
+        }
+
+        // 충전기 Id 리스트 -> 충전기 리스트
+        function getChargersByChargerIds(chargerIds) {
+            let resultChargers = [];
+            if (isListNotEmpty(chargerIds)) {
+                chargerIds.forEach((chargerId) => {
+                    let index = chargerIds.indexOf(chargerId);
+                    if (index !== -1) {
+                        resultChargers.push(chargerArray[index]); // -1인 경우 찾을 수 없음
+                    }
+                    else {
+                        console.log(chargerId + "를 charger 인덱스에서 찾을 수 없음");
+                    }
+                });
+            }
+            return resultChargers;
+        }
+    </script>
+
+    <div class="leftContainer m-2">
+        <!-- 검색 영역 -->
+        <div class="searchContainer mb-2 px-3 pt-3 rounded bg-white">
+            <form class="form collapse show" id="searchCollapse">
+                <div class="mb-2 addressInputBox">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="formAddress" name="address" placeholder="주소" required>
+                        <label for="formAddress">주소</label>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mb-2 locationInputBox">
+                    <div class="flex-fill form-floating">
+                        <input type="text" class="form-control" id="formLatitude" name="address" placeholder="위도">
+                        <label for="formLatitude">위도</label>
+                    </div>
+                    <div class="flex-fill form-floating">
+                        <input type="text" class="form-control" id="formLongitude" name="address" placeholder="경도">
+                        <label for="formLongitude">경도</label>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="flex-fill btn btn-outline-secondary btn-search" type="button" value="location">
+                        <div>좌표 검색</div>
+                        <span class="spinner-border spinner-border-sm visually-hidden" aria-hidden="true"></span>
+                        <span class="spinner-text visually-hidden" role="status">검색중</span>
+                    </button>
+                    <button class="flex-fill btn btn-primary btn-search" type="button" value="address">
+                        <div>주소 검색</div>
+                        <span class="spinner-border spinner-border-sm visually-hidden" aria-hidden="true"></span>
+                        <span class="spinner-text visually-hidden" role="status">검색중</span>
+                    </button>
+                </div>
+            </form>
+            <div class="d-flex searchBoxCollapse">
+                <button class="flex-fill btn text-secondary" data-bs-toggle="collapse" aria-expanded="true" aria-controls="#searchCollapse" data-bs-target="#searchCollapse">
+                    <svg id="btn-collapse-icon" class="flex-shrink-0 me-2 bi bi-chevron-up" width="20" height="20" fill="#currentColor" role="img"><use xlink:href="#chevron-up"/></svg>
+                    <svg id="btn-expand-icon" class="flex-shrink-0 me-2 bi bi-chevron-down visually-hidden" width="20" height="20" fill="#currentColor" role="img"><use xlink:href="#chevron-down"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="boundChargerContainer d-flex flex-column px-3 pt-3 rounded bg-white">
+            <div class="alert alert-secondary mb-2 d-flex align-items-center">
+                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#info-fill"/></svg>
+                <div id="chargerCountText"><span>주변 충전기 수: {  }개</span></div>
+            </div>
+            <div class="chargerListBox collapse show align-self-stretch" id="chargerListCollapse">
+
+            </div>
+            <div class="d-flex chargerListCollapse">
+                <button class="flex-fill btn text-secondary" data-bs-toggle="collapse" aria-expanded="true" aria-controls="#chargerListCollapse" data-bs-target="#chargerListCollapse">
+                    <svg id="charger-btn-collapse-icon" class="flex-shrink-0 me-2 bi bi-chevron-up" width="20" height="20" fill="#currentColor" role="img"><use xlink:href="#chevron-up"/></svg>
+                    <svg id="charger-btn-expand-icon" class="flex-shrink-0 me-2 bi bi-chevron-down visually-hidden" width="20" height="20" fill="#currentColor" role="img"><use xlink:href="#chevron-down"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!--  지도 영역  -->
+    <div id="map"></div>
+
+    <!--  지도 관련 스크립트  -->
+    <script>
+        // 지도 초기화
+        const map = new naver.maps.Map('map', {
+            center: new naver.maps.LatLng(36.20, 127.25),
+            zoom: 8
+        });
+
+        // 바인딩된 충전기 목록 갱신 호출
+        const mapIdleEvent = () => {
+            let chargerIds = getBindingChargerIds()
+            updateBindingChargerBox(chargerIds);
+        }
+
+        let chargers = getChargers();
+        let markers = [];
+        let cluster;
+        let openInfoWindow = null;
+
+        if (isListNotEmpty(chargers)) {
+            chargers.forEach((charger) => {
+                const marker = new naver.maps.Marker({
+                    position: new naver.maps.LatLng(charger.latitude, charger.longitude),
+                    map: null,
+                    title: charger.name,
+                    //https://developers.naver.com/forum/posts/20414
+                    id: charger.id
+                });
+
+                const contentString = `
+                    <div class="info-window p-2">
+                        <h3>${charger.name}</h3>
+                        <div><strong>도로명주소:</strong> ${charger.addressNew}</div>
+                        <div><strong>주소:</strong> ${charger.addressOld}</div>
+                        <div><strong>평일 운영 시간:</strong> ${charger.weekdayOpen} ~ ${charger.weekdayClose}</div>
+                        <div><strong>토요일 운영 시간:</strong> ${charger.saturdayOpen} ~ ${charger.saturdayClose}</div>
+                        <div><strong>일요일 운영 시간:</strong> ${charger.holidayOpen} ~ ${charger.holidayClose}</div>
+                        <div><strong>전화번호:</strong> ${charger.callNumber}</div>
+                    </div>
+                `;
+
+                // 마커 클릭시 정보창 표시
+                const infowindow = new naver.maps.InfoWindow({
+                    content: contentString
+                });
+
+                naver.maps.Event.addListener(marker, 'click', function() {
+                    infowindow.open(map, marker.getPosition());
+                });
+
+                // 정보창 중복 방지 처리
+                naver.maps.Event.addListener(marker, 'click', () => {
+                    // 정보창이 열려있는 상태에서 다른 정보창 선택시
+                    if (openInfoWindow) {
+                        openInfoWindow.close();
+                    }
+                    infowindow.open(map, marker); // 마커 위치에서 정보창 띄우기
+                    openInfoWindow = infowindow;
+                });
+
+                // 지도 클릭 시 열린 정보창 닫기
+                naver.maps.Event.addListener(map, 'click', () => {
+                    if (openInfoWindow) {
+                        openInfoWindow.close();  // 열린 정보창 닫기
+                        openInfoWindow = null;  // 상태 초기화
+                    }
+                });
+
+                // 마커 생성
+                markers.push(marker);
+            });
+        }
+
+        // 지도 움직임 종료(IDLE) 시 Bound된 충전기 목록 갱신
+        naver.maps.Event.addListener(map, 'idle', () => {
+            mapIdleEvent();
+        });
+
+        // 클러스터 생성 함수, 마커 생성 이후에 동작해야함.
+        createCluster(map, markers);
+        mapIdleEvent();
+
+        // 현재 바인딩된 마커에서 chargerId 획득
+        function getBindingChargerIds () {
+            let mapBounds = map.getBounds();
+            let boundMakers = []; // 지도에 바인딩된 마커 리스트
+            let chargerIds = []; // 마커에서 추출한 충전기 id
+
+            if (isListNotEmpty(markers)) {
+                markers.forEach((marker) => {
+                    let position = marker.getPosition();
+                    if (mapBounds.hasLatLng(position)) {
+                        boundMakers.push(marker);
+                        chargerIds.push(marker.id);
+                    }
+                });
+            }
+
+            return chargerIds;
+        }
+
+        // FIXME API 호출 해보면서 성능 차이 비교할 필요 있음. 체감상 현재는 많이 개선됐고 클러스터 아이콘과 관련된 코드가 중복되는 느낌이 있으나 분리하지 않으면 해결이 안됨.
+        function createCluster(map, markers) {
+            if (cluster) {
+                // 기존 클러스터들 초기화
+                cluster.setMap(null);
+            }
+
+            cluster = new MarkerClustering({
+                minClusterSize: 2,  // 최소 클러스터 크기, 마커 3개부터 클러스터링
+                maxZoom: 19,        // 줌 레벨이 19 이상일 때, 클러스터 해제
+                map: map,
+                markers: markers,
+                gridSize: 150,      // 군집도 조절
+                disableClickZoom: true,
+                icons: createClusterIcons(),
+                    stylingFunction: (clusterMarker, count) => {
+                        const element = clusterMarker.getElement();
+                        element.innerHTML = `
+                            <div style="
+                                position: relative;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                width: 40px;
+                                height: 40px;
+                                color: white;
+                                font-size: 14px;
+                                font-weight: bold;
+                                border-radius: 50%;
+                                cursor: pointer;
+                                transform: translateY(40px);
+                                box-sizing: border-box;
+                                z-index: 99;">
+                                ${count}
+                            </div>`;
+                    }
+            });
+
+            function createClusterIcons() {
+                return [{
+                    content: `
+                        <div style="
+                            position: absolute;
+                            width: 40px;
+                            height: 40px;
+                            background: url('/cluster-marker.png') no-repeat center;
+                            background-size: cover;
+                            border-radius: 50%;
+                            border: 2px solid white;
+                            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+                            transform: translateX(-2px);
+                            z-index: 1;">
+                        </div>`,
+                    size: new naver.maps.Size(40, 40),
+                    anchor: new naver.maps.Point(20, 20),
+                }];
+            }
+        }
+    </script>
+</div>
+</html>

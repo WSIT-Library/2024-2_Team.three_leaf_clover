@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>충전소 지도</title>
+    <script src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=tg2jn30hid"></script>
+    <script type="text/javascript" src="/MarkerClustering.js"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 500px;
+        }
+        #searchContainer {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>충전소 지도</h1>
+
+<!-- 주소 입력 및 검색 버튼 추가 -->
+<div id="searchContainer">
+    <input type="text" id="addressInput" placeholder="주소를 입력하세요" />
+    <button type="button" class="search-button" onclick="searchChargers()">검색</button>
+</div>
+<div>
+    <input type="text" id="latitudeInput" placeholder="위도를 입력하세요" />
+    <input type="text" id="longitudeInput" placeholder="경도를 입력하세요" />
+    <button type="button" class="search-button" onclick="searchNearbyChargers()">주변 충전기 검색</button>
+</div>
+
+<div id="map"></div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // 지도 초기화
+    const map = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(37.5665, 126.978), // 기본 위치 (서울)
+        zoom: 8
+    });
+
+    let markers = [];
+    let cluster;
+    let chargerData = /*[[${chargers}]]*/ []; // 서버에서 받은 충전소 데이터
+    let openInfoWindow = null;
+
+    chargerData.forEach(charger => {
+        const marker = new naver.maps.Marker({
+            position: new naver.maps.LatLng(charger.latitude, charger.longitude),
+            map: null,
+            title: charger.name
+        });
+
+        const contentString = `
+            <div class="info-window">
+                <h3>${charger.name}</h3>
+                <p><strong>도로명주소:</strong> ${charger.addressNew}</p>
+                <p><strong>주소:</strong> ${charger.addressOld}</p>
+                <p><strong>평일 운영 시간:</strong> ${charger.weekdayOpen} ~ ${charger.weekdayClose}</p>
+                <p><strong>토요일 운영 시간:</strong> ${charger.saturdayOpen} ~ ${charger.saturdayClose}</p>
+                <p><strong>일요일 운영 시간:</strong> ${charger.holidayOpen} ~ ${charger.holidayClose}</p>
+                <p><strong>전화번호:</strong> ${charger.callNumber}</p>
+            </div>
+        `;
+
+        // 마커 클릭시 정보창 표시
+        const infowindow = new naver.maps.InfoWindow({
+            content: contentString
+        });
+
+        naver.maps.Event.addListener(marker, 'click', function() {
+            infowindow.open(map, marker.getPosition());
+        });
+
+        // 정보창 중복 방지 처리
+        naver.maps.Event.addListener(marker, 'click', () => {
+            // 정보창이 열려있는 상태에서 다른 정보창 선택시
+            if (openInfoWindow) {
+                openInfoWindow.close();
+            }
+            infowindow.open(map, marker); // 마커 위치에서 정보창 띄우기
+            openInfoWindow = infowindow;
+        });
+
+        // 지도 클릭 시 열린 정보창 닫기
+        naver.maps.Event.addListener(map, 'click', () => {
+            if (openInfoWindow) {
+                openInfoWindow.close();  // 열린 정보창 닫기
+                openInfoWindow = null;  // 상태 초기화
+            }
+        });
+
+        // 마커 생성
+        markers.push(marker);
+    });
+
+    // 클러스터 생성 함수, 마커 생성 이후에 동작해야함.
+    createCluster(map, markers);
+    /*]]>*/
+
+    function searchChargers() {
+        const address = document.getElementById('addressInput').value;
+        if (address) {
+            // 주소로 URL 설정
+            const url = `/chargers/address?address=${encodeURIComponent(address)}`;
+            window.location.href = url; // 해당 URL로 리디렉션
+        } else {
+            alert("주소를 입력하세요.");
+        }
+    }
+
+    function searchNearbyChargers() {
+        const latitude = document.getElementById('latitudeInput').value;
+        const longitude = document.getElementById('longitudeInput').value;
+
+        if (latitude && longitude) {
+            // 위도와 경도로 URL 설정
+            const url = `/chargers/near?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`;
+            window.location.href = url; // 해당 URL로 리디렉션
+        } else {
+            alert("위도와 경도를 입력하세요.");
+        }
+    }
+
+    // FIXME API 호출 해보면서 성능 차이 비교할 필요 있음. 체감상 현재는 많이 개선됐고 클러스터 아이콘과 관련된 코드가 중복되는 느낌이 있으나 분리하지 않으면 해결이 안됨.
+    function createCluster(map, markers) {
+        if (cluster) {
+            // 기존 클러스터들 초기화
+            cluster.setMap(null);
+        }
+
+        cluster = new MarkerClustering({
+            minClusterSize: 2,  // 최소 클러스터 크기, 마커 3개부터 클러스터링
+            maxZoom: 19,        // 줌 레벨이 19 이상일 때, 클러스터 해제
+            map: map,
+            markers: markers,
+            gridSize: 150,      // 군집도 조절
+            disableClickZoom: true,
+            icons: createClusterIcons(),
+            stylingFunction: (clusterMarker, count) => {
+                const element = clusterMarker.getElement();
+                element.innerHTML = `
+            <div style="
+                position: relative;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 40px;
+                height: 40px;
+                color: white;
+                font-size: 14px;
+                font-weight: bold;
+                border-radius: 50%;
+                cursor: pointer;
+                transform: translateY(40px);
+                box-sizing: border-box;
+                z-index: 99;">
+                ${count}
+            </div>`;
+            }
+        });
+
+        function createClusterIcons() {
+            return [{
+                content: `
+            <div style="
+                position: absolute;
+                width: 40px;
+                height: 40px;
+                background: url('/cluster-marker.png') no-repeat center;
+                background-size: cover;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+                transform: translateX(-2px);
+                z-index: 1;">
+            </div>`,
+                size: new naver.maps.Size(40, 40),
+                anchor: new naver.maps.Point(20, 20),
+            }];
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<html layout:decorate="~{common/layout}" xmlns:th="http://www.thymeleaf.org">
+<div layout:fragment="content" class="container text-center my-3">
+    <style>
+        .chargersCard {
+            flex: 1;
+        }
+    </style>
+
+<!--    <link rel="stylesheet" th:href="@{/css/CSS_NAME.css}">-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+
+    <!--  타임리프 인증된 사용자 접속 시 스크립트  -->
+    <script sec:authorize="isAuthenticated()"></script>
+
+    <!--  타임리프 기본 실행 스크립트  -->
+    <script th:inline="javascript"></script>
+
+    <div class="d-block mb-3 text-start">
+        <H2 class="fw-bold">DASHBOARD</H2>
+    </div>
+
+    <!--  경고 출력  -->
+<!--    <div class="alert alert-secondary mb-2 d-flex align-items-center" th:if="${#lists.isEmpty(logList)==true}">-->
+<!--        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#info-fill"/></svg>-->
+<!--        <div>표시할 로그가 없습니다.</div>-->
+<!--    </div>-->
+<!--    <div class="alert alert-secondary mb-2 d-flex align-items-center" th:if="${#lists.isEmpty(logList)==false}">-->
+<!--        <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="Success:"><use xlink:href="#info-fill"/></svg>-->
+<!--        <div th:text="|등록 로그 수: ${logList.size}개|">Info</div>-->
+<!--    </div>-->
+
+    <div class="mb-1"></div>
+
+    <div class="d-flex flex-wrap gap-3 align-items-center align-items-stretch">
+        <div class="chargersCard card pt-3 bg-light">
+            <div class="card-img">
+                <svg class="bi flex-shrink-0" width="60" height="60" fill="#408558" role="img"><use xlink:href="#lightning-charge-fill"/></svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title fs-2 fw-bold">유휴 충전기</div>
+                <div class="card-text" th:text="${idleChargerCount}"></div>
+            </div>
+        </div>
+        <div class="chargersCard card pt-3 bg-light">
+            <div class="card-img">
+                <svg class="bi flex-shrink-0" width="60" height="60" fill="#F6C343" role="img"><use xlink:href="#lightning-charge-fill"/></svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title fs-2 fw-bold">사용 충전기</div>
+                <div class="card-text" th:text="${usingChargerCount}"></div>
+            </div>
+        </div>
+        <div class="chargersCard card pt-3 bg-light">
+            <div class="card-img">
+                <svg class="bi flex-shrink-0" width="60" height="60" fill="#E15241" role="img"><use xlink:href="#exclamation-triangle-fill"/></svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title fs-2 fw-bold">고장 충전기</div>
+                <div class="card-text" th:text="${brokenChargerCount}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
